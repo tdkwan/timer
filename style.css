@@ -1,0 +1,55 @@
+@font-face {
+    font-family: "Space Mono Regular";
+    src:
+        url("fonts/SpaceMono-Regular.ttf")
+}
+@font-face {
+    font-family: "Space Mono Bold";
+    src:
+        url("fonts/SpaceMono-Bold.ttf")
+}
+@font-face {
+    font-family: "Space Mono Italic";
+    src:
+        url("fonts/SpaceMono-Italic.ttf")
+}
+
+body {
+    font-family: "Space Mono Regular";
+    padding-right: 0;
+}
+
+.timer {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: .12em;
+    font-size: 236px;
+    line-height: 256px;
+}
+
+.timeUnit {
+    height: auto;
+    width: 100%;
+    padding-left: .24em;
+}
+
+.num {
+    float: inline-start;
+}
+
+.label {
+    margin-left: .10em;
+}
+
+.currentTime {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translate(40%, -50%) rotate(-90deg);
+}
+
+#dialogue {
+    position: fixed;
+}
