@@ -8,18 +8,61 @@ var minutesDom = document.getElementById("numMinutes");
 var hoursDom = document.getElementById("numHours");
 isTimerRunning = false;
 
+// Storing time chunks { name: timeinSeconds }
+var times = {}
+
 // Timer logic
 
 document.addEventListener('keydown', function(event) {
-    event.preventDefault();
-    if (event.code === 'Space' || event.key === ' ') {
-        if (!isTimerRunning) {
-            isTimerRunning = !isTimerRunning;
-            timer();
-        } else {
-            isTimerRunning = !isTimerRunning;
-            completeTimer();
-        }
+    switch (event.code) {
+        case 'Space':
+            event.preventDefault();
+            if (!isTimerRunning) {
+                isTimerRunning = !isTimerRunning;
+                timer();
+            } else {
+                isTimerRunning = !isTimerRunning;
+                // completeTimer();
+                showCompletionDialogue();
+            }
+            break;
+        case 'Enter':
+            let textInput = document.getElementById("textInput");
+            if (textInput.value.length > 0) {
+                taskName = textInput.value.toUpperCase();
+                let numHours = (document.getElementById("numHours").innerText);
+                let numMinutes = document.getElementById("numMinutes").innerText;
+                let numSeconds = document.getElementById("numSeconds").innerText;
+                console.log(numHours);
+                console.log("neter");
+                let dialogue = document.getElementsByClassName("dialogue")[0];
+                dialogue.style.display = "none";
+                times[taskName] = convertToSeconds(numHours, numMinutes, numSeconds)
+                console.log(times[taskName]);
+
+                //Container div for overlaid div elements
+                let newTaskContainerDiv = document.createElement("div");
+                newTaskContainerDiv.className = "taskContainer";
+                newTaskContainerDiv.id = taskName;
+
+                let newTaskNameDiv = document.createElement("div");
+                newTaskNameDiv.className = "taskName";
+                newTaskNameDiv.innerText = taskName;
+
+                let newDurationDiv = document.createElement("div");
+                let durationStringArray = convertToStringArray(times[taskName])
+                console.log(durationStringArray);
+                newDurationDiv.className = "taskDuration";
+                newDurationDiv.innerText = `${durationStringArray[0]}:${durationStringArray[1]}:${durationStringArray[2]}`;
+
+                newTaskContainerDiv.appendChild(newTaskNameDiv);
+                newTaskNameDiv.appendChild(newDurationDiv);
+
+                console.log(newTaskContainerDiv)
+                let timesDiv = document.getElementById("times");
+                timesDiv.appendChild(newTaskContainerDiv);
+            }
+            break;
     }
 })
 
@@ -27,12 +70,12 @@ function timer() {
     if (isTimerRunning) {
         seconds++
         secondsDom.innerText = formatTwoDigits(seconds);
-        if (seconds > 60) {
+        if (seconds >= 60) {
             minutes++;
             minutesDom.innerText = formatTwoDigits(minutes);
             seconds = 0;
         }
-        if (minutes > 60) {
+        if (minutes >= 60) {
             hours++;
             minutes = 0;
         }
@@ -56,7 +99,7 @@ function getCurrentTime() {
     setTimeout(getCurrentTime, 1000);
 }
 
-// Drawing completion dialogue
+// Drawing completion dialogue animation test
 function completeTimer() {
     let canvas = document.getElementById("dialogue");
     console.log(canvas);
@@ -66,7 +109,7 @@ function completeTimer() {
     canvas.width = document.body.clientWidth;
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
-    drawBox(canvas.width, canvas.height);
+    // drawBox(canvas.width, canvas.height);
 }
 
 function drawBox(width, height) {
@@ -116,5 +159,42 @@ function easeOutQuad(t) {
     return t * (2 - t);
 }
 
+// Dialogue input
+function showCompletionDialogue() {
+    let dialogue = document.getElementsByClassName("dialogue")[0];
+    dialogue.style.display = "block";
+    dialogue.style.position = "fixed";
+    document.getElementById("numHoursSummary").innerText = document.getElementById("numHours").innerText;
+    document.getElementById("numMinutesSummary").innerText = document.getElementById("numMinutes").innerText;
+    document.getElementById("numSecondsSummary").innerText = document.getElementById("numSeconds").innerText;
+}
+
+// Conversion of seconds to hours, minutes and seconds and vice versa
+
+// Takes an array in the form of ["hours", "mins", "seconds"]
+function convertToSeconds(numHours, numMinutes, numSeconds) {
+    let hours = parseInt(numHours, 10);
+    let mins = parseInt(numMinutes, 10);
+    let seconds = parseInt(numSeconds, 10);
+    let totalSeconds = hours * 3600 + mins * 60 + seconds;
+    return totalSeconds;
+}
+
+function convertToStringArray(totalSeconds) {
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    console.log(totalSeconds);
+    if (totalSeconds > 3600) {
+        hours = Math.floor(totalSeconds / 3600);
+        totalSeconds = totalSeconds % 3600;
+    }
+    if (totalSeconds > 60) {
+        minutes = Math.floor(totalSeconds / 60); // this makes "infinity" lol
+        totalSeconds = totalSeconds % 60;
+    }
+    seconds = totalSeconds;
+    return [formatTwoDigits(hours), formatTwoDigits(minutes), formatTwoDigits(seconds)];
+}
 
 
