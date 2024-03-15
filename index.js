@@ -1,15 +1,19 @@
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
+const MIN_TASK_WIDTH = 80;
+const MAX_TASK_WIDTH = 200;
 var seconds = 0;
 var minutes = 0;
 var hours = 0;
 var secondsDom = document.getElementById("numSeconds");
 var minutesDom = document.getElementById("numMinutes");
 var hoursDom = document.getElementById("numHours");
+// global DOM objects for completing tasks
+var dialogue = document.getElementsByClassName("dialogue")[0];
+let textInput = document.getElementById("textInput");
 isTimerRunning = false;
 
 // Storing time chunks { name: timeinSeconds }
-var times = {}
+var tasks = {}
 
 // Timer logic
 
@@ -17,30 +21,26 @@ document.addEventListener('keydown', function(event) {
     switch (event.code) {
         case 'Space':
             event.preventDefault();
-            if (!isTimerRunning) {
-                isTimerRunning = !isTimerRunning;
-                timer();
-            } else {
-                isTimerRunning = !isTimerRunning;
-                // completeTimer();
-                showCompletionDialogue();
+            if (dialogue.style.display === "" || dialogue.style.display === "none") { // only run if not in completion stage
+                if (isTimerRunning) {
+                    isTimerRunning = !isTimerRunning;
+                    showCompletionDialogue();
+                } else {
+                    isTimerRunning = !isTimerRunning;
+                    timer()
+                }
             }
             break;
         case 'Enter':
-            let textInput = document.getElementById("textInput");
             if (textInput.value.length > 0) {
                 taskName = textInput.value.toUpperCase();
                 let numHours = (document.getElementById("numHours").innerText);
                 let numMinutes = document.getElementById("numMinutes").innerText;
                 let numSeconds = document.getElementById("numSeconds").innerText;
-                console.log(numHours);
-                console.log("neter");
-                let dialogue = document.getElementsByClassName("dialogue")[0];
                 dialogue.style.display = "none";
-                times[taskName] = convertToSeconds(numHours, numMinutes, numSeconds)
-                console.log(times[taskName]);
+                tasks[taskName] = convertToSeconds(numHours, numMinutes, numSeconds)
 
-                //Container div for overlaid div elements
+                //Container div for a new time block
                 let newTaskContainerDiv = document.createElement("div");
                 newTaskContainerDiv.className = "taskContainer";
                 newTaskContainerDiv.id = taskName;
@@ -48,20 +48,37 @@ document.addEventListener('keydown', function(event) {
                 let newTaskNameDiv = document.createElement("div");
                 newTaskNameDiv.className = "taskName";
                 newTaskNameDiv.innerText = taskName;
-
+                newTaskNameDiv.style.width = `${MIN_TASK_WIDTH + scaleToRange(100)}px`;
+                newTaskContainerDiv.appendChild(newTaskNameDiv);
+                
                 let newDurationDiv = document.createElement("div");
-                let durationStringArray = convertToStringArray(times[taskName])
-                console.log(durationStringArray);
+                let durationStringArray = convertToStringArray(tasks[taskName])
                 newDurationDiv.className = "taskDuration";
                 newDurationDiv.innerText = `${durationStringArray[0]}:${durationStringArray[1]}:${durationStringArray[2]}`;
-
-                newTaskContainerDiv.appendChild(newTaskNameDiv);
                 newTaskNameDiv.appendChild(newDurationDiv);
 
-                console.log(newTaskContainerDiv)
+                let newTaskDateDiv = document.createElement("div");
+                newTaskDateDiv.className = "taskDate";
+                let currentTime = new Date();
+                let month = formatTwoDigits(currentTime.getMonth());
+                let day = formatTwoDigits(currentTime.getDate());
+                let year = currentTime.getFullYear().toString().substring(2);
+                newTaskDateDiv.innerText = `${month}/${day}/${year}`;
+                newDurationDiv.appendChild(newTaskDateDiv);
+
                 let timesDiv = document.getElementById("times");
                 timesDiv.appendChild(newTaskContainerDiv);
+
+                textInput.value = "";
+                resetTimer();
             }
+            break;
+        case "Escape":
+            console.log("hello");
+            if (dialogue.style.display === "block") {
+                dialogue.style.display = "none";
+                textInput.innerText = "";
+            } 
             break;
     }
 })
@@ -83,6 +100,15 @@ function timer() {
     }
 }
 
+function resetTimer() {
+    hours = 0;
+    hoursDom.innerText = formatTwoDigits(hours);
+    minutes = 0;
+    minutesDom.innerText = formatTwoDigits(minutes);
+    seconds = 0;
+    secondsDom.innerText = formatTwoDigits(seconds);
+}
+
 function formatTwoDigits(num) {
     return num < 10 ? "0" + num : num;
 }
@@ -102,7 +128,6 @@ function getCurrentTime() {
 // Drawing completion dialogue animation test
 function completeTimer() {
     let canvas = document.getElementById("dialogue");
-    console.log(canvas);
     /** @type {CanvasRenderingContext2D} */
     let ctx = canvas.getContext("2d");
     canvas.height = document.body.clientHeight;
@@ -153,7 +178,6 @@ function drawBox(width, height) {
 
 // Number of steps to complete the line drawing
 
-
 // Easing function to gradually slow down the animation
 function easeOutQuad(t) {
     return t * (2 - t);
@@ -161,7 +185,6 @@ function easeOutQuad(t) {
 
 // Dialogue input
 function showCompletionDialogue() {
-    let dialogue = document.getElementsByClassName("dialogue")[0];
     dialogue.style.display = "block";
     dialogue.style.position = "fixed";
     document.getElementById("numHoursSummary").innerText = document.getElementById("numHours").innerText;
@@ -169,7 +192,9 @@ function showCompletionDialogue() {
     document.getElementById("numSecondsSummary").innerText = document.getElementById("numSeconds").innerText;
 }
 
-// Conversion of seconds to hours, minutes and seconds and vice versa
+/**
+ * Conversion of seconds to hours, minutes and seconds and vice versa
+ **/
 
 // Takes an array in the form of ["hours", "mins", "seconds"]
 function convertToSeconds(numHours, numMinutes, numSeconds) {
@@ -184,7 +209,6 @@ function convertToStringArray(totalSeconds) {
     let hours = 0;
     let minutes = 0;
     let seconds = 0;
-    console.log(totalSeconds);
     if (totalSeconds > 3600) {
         hours = Math.floor(totalSeconds / 3600);
         totalSeconds = totalSeconds % 3600;
@@ -195,6 +219,23 @@ function convertToStringArray(totalSeconds) {
     }
     seconds = totalSeconds;
     return [formatTwoDigits(hours), formatTwoDigits(minutes), formatTwoDigits(seconds)];
+}
+
+/**
+ *  * Calculate width of task box eventually add functionality to determine widths relative to
+ * the rest of the times of each task.
+ * @param {object} times An object with all the tasks where {[task]: durationOfTask}
+ */
+function scaleToRange(rangeSize) {
+    return Math.random() * rangeSize;
+    // const maxValue = Number.POSITIVE_INFINITY; // Represents positive infinity
+    // const scaleFactor = rangeSize / maxValue;
+    // console.log(Math.floor(x * scaleFactor));
+    // return Math.floor(x * scaleFactor);
+}
+
+function compareByDuration(a, b) {
+    return a - b;
 }
 
 

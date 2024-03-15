@@ -20,11 +20,14 @@ body {
 }
 
 .timer {
+    z-index: 99;
+    position: relative;
     width: fit-content;
     display: flex;
     flex-wrap: nowrap;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     padding-top: .12em;
     font-size: 236px;
     line-height: 256px;
@@ -50,13 +53,16 @@ body {
 
 .taskName {
     width: fit-content;
+    height: fit-content;
+    min-height: 30px;
     display: flex;
     position: relative;
-    padding: 10px 25px 10px 25px;
+    padding: 12px 30px 12px 30px;
     background-color: white;
     color: black;
     border: solid 1px black;
     z-index: 10;
+    justify-content: center;
 }
 
 .taskName:hover {
@@ -68,17 +74,18 @@ body {
 .taskDuration {
     position: absolute;
     display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    top: 0;
-    left: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    top: 7px;
+    left: 6px;
     width: 100%;
     height: 100%;
-    text-align: center;
     color: white;
     z-index: -10;
+    font-size: 14px;
+    line-height: 20px;
 }
+
 
 .task:hover {
     transition: ease .2s;
@@ -87,6 +94,9 @@ body {
 }
 
 .timeUnit {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     height: auto;
     width: 100%;
     padding-left: .24em;
@@ -97,6 +107,7 @@ body {
 }
 
 .label {
+    display: inline;
     margin-left: .10em;
 }
 
@@ -122,7 +133,44 @@ body {
     position: absolute;
     top: 2%;
     left: 2%;
+    font-size: 35px;
+    line-height: 38px;
 }
+
+/**
+* Mobile Design
+*/
+@media screen and (width <= 620px) {
+    .timer {
+        z-index: 99;
+    }
+    .timer > .timeUnit > .label {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        font-size: 48px;
+        line-height: 18px;
+        letter-spacing: -30px;
+        margin-top: -19px;
+    }
+
+    .timer > .timeUnit {
+        line-height: 220px;
+    }
+
+    #times {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        position: fixed;
+        top: 95%;
+        left: 5%;
+        transform-origin: top left;
+        transform: rotate(-90deg);
+        transition: transform .5s;
+        z-index: 0
+    }
+}
+
 #textInput {
     position: relative;
     top: 50%;
@@ -131,8 +179,42 @@ body {
     transform: translate(-50%, -50%);
     text-transform: uppercase;
     text-align: center;
+    font-family: "Space Mono Regular";
+    font-size: 32px;
 }
 
 #textInput:focus {
     outline: none;
+}
+
+#textInput::-webkit-input-placeholder {
+    color: grey;
+    -webkit-animation-name: blinker;
+    -webkit-animation-duration: 2s;
+    -webkit-animation-timing-function: steps(2, start);
+    -webkit-animation-iteration-count: infinite;
+}
+
+#textInput::-moz-placeholder { 
+    color:grey;
+    -moz-animation-name: blinker;
+    -moz-animation-duration: 2s;
+    -moz-animation-timing-function: steps(2, start);
+    -moz-animation-iteration-count: infinite;
+
+}
+
+@-moz-keyframes blinker {  
+    0% { color:grey }
+    100% { color: white; }
+}
+
+@-webkit-keyframes blinker {  
+    0% { color:grey }
+    100% { color: white; }
+}
+
+@keyframes blinker {  
+    0% { color:grey }
+    100% { color: white; }
 }
