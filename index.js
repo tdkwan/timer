@@ -15,7 +15,7 @@ isTimerRunning = false;
 // Storing time chunks { name: timeinSeconds }
 var tasks = {}
 
-// Timer logic
+// Timer logic via Keyboard Input
 document.addEventListener('keydown', function(event) {
     switch (event.code) {
         case 'Space':
@@ -88,28 +88,69 @@ document.addEventListener('keydown', function(event) {
     }
 })
 
+
+// Timer logic for mobile interactions
+let timerDiv = document.getElementById("timer");
+timerDiv.addEventListener('mousedown', function(event) {
+    if (isTimerRunning) {
+        isTimerRunning = !isTimerRunning;
+        showCompletionDialogue();
+    } else {
+        isTimerRunning = !isTimerRunning;
+        timer();
+    }
+})
+
+let dialogueDiv = document.getElementById("dialogue");
+dialogueDiv.addEventListener('mousedown', function(event) {
+    dialogueDiv.style.display = "none";
+})
+
+textInput.addEventListener('mousedown', function(event) {
+    event.stopPropagation();
+})
+
+window.addEventListener('scrollend', function(event) {
+    console.log(`window.innerHeight = ${window.innerHeight}`);
+    console.log(`window.scrollY = ${window.scrollY}`);
+    console.log(`document.body.scrollHeight = ${document.body.scrollHeight}`)
+
+    if (window.scrollY > 5) {
+        if (isOnMobile() && Object.keys(tasks).length > 0) {
+            let timer = document.getElementById("timer");
+            timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
+        }
+    } else {
+        if (isOnMobile() && Object.keys(tasks).length > 0) {
+            let timer = document.getElementById("timer");
+            timer.style.transform = "";
+        }
+    }
+})
+
 // MEDIA QUERIES
 const mobileMediaQuery = window.matchMedia("(max-width: 620px)");
-
 
 function isOnMobile() {
     return window.matchMedia("(max-width:620px)").matches;
 }
 
-let numSeconds = document.getElementById("numSeconds");
-numSeconds.addEventListener("mouseenter", () => {
-    if (isOnMobile() && Object.keys(tasks).length > 0) {
-        let timer = document.getElementById("timer");
-        timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
-    }
-})
+// Handling hover effects to move timer in mobile view
+// Not needed now that mobile is actually run on mobile i.e. hover listeners don't work on mobile
+// let numSeconds = document.getElementById("numSeconds");
+// numSeconds.addEventListener("mouseenter", () => {
+//     if (isOnMobile() && Object.keys(tasks).length > 0) {
+//         let timer = document.getElementById("timer");
+//         timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
+//     }
+// })
 
-times.addEventListener("mouseleave", () => {
-    if (isOnMobile() && Object.keys(tasks).length > 0) {
-        let timer = document.getElementById("timer");
-        timer.style.transform = "";
-    }
-});
+// times.addEventListener("mouseleave", () => {
+//     if (isOnMobile() && Object.keys(tasks).length > 0) {
+//         let timer = document.getElementById("timer");
+//         timer.style.transform = "";
+//     }
+// });
 
 function timer() {
     if (isTimerRunning) {
