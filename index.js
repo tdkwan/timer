@@ -1,6 +1,6 @@
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-const MIN_TASK_WIDTH = 80;
-const MAX_TASK_WIDTH = 200;
+const SECONDS_IN_A_DAY = 86400;
+const TRANSLATE_TIMER = -200;
 var seconds = 0;
 var minutes = 0;
 var hours = 0;
@@ -16,7 +16,6 @@ isTimerRunning = false;
 var tasks = {}
 
 // Timer logic
-
 document.addEventListener('keydown', function(event) {
     switch (event.code) {
         case 'Space':
@@ -33,34 +32,41 @@ document.addEventListener('keydown', function(event) {
             break;
         case 'Enter':
             if (textInput.value.length > 0) {
+                if (Object.keys(tasks).length === 0) {
+                    let timesDiv = document.getElementById("times")
+                    timesDiv.style.display = "flex";
+                }
                 taskName = textInput.value.toUpperCase();
-                let numHours = (document.getElementById("numHours").innerText);
+                let numHours = document.getElementById("numHours").innerText;
                 let numMinutes = document.getElementById("numMinutes").innerText;
                 let numSeconds = document.getElementById("numSeconds").innerText;
                 dialogue.style.display = "none";
                 tasks[taskName] = convertToSeconds(numHours, numMinutes, numSeconds)
 
-                //Container div for a new time block
+                // Container div for a new time block
                 let newTaskContainerDiv = document.createElement("div");
                 newTaskContainerDiv.className = "taskContainer";
                 newTaskContainerDiv.id = taskName;
 
+                // Creating task block
                 let newTaskNameDiv = document.createElement("div");
                 newTaskNameDiv.className = "taskName";
                 newTaskNameDiv.innerText = taskName;
-                newTaskNameDiv.style.width = `${MIN_TASK_WIDTH + scaleToRange(100)}px`;
+                newTaskNameDiv.style.width = `${getTaskWidth(tasks[taskName], 86400, 80, 620)}px`;
                 newTaskContainerDiv.appendChild(newTaskNameDiv);
                 
+                // Creating duratino text to underlay task block
                 let newDurationDiv = document.createElement("div");
                 let durationStringArray = convertToStringArray(tasks[taskName])
                 newDurationDiv.className = "taskDuration";
                 newDurationDiv.innerText = `${durationStringArray[0]}:${durationStringArray[1]}:${durationStringArray[2]}`;
                 newTaskNameDiv.appendChild(newDurationDiv);
 
+                // Adding the date to underlay the task block
                 let newTaskDateDiv = document.createElement("div");
                 newTaskDateDiv.className = "taskDate";
                 let currentTime = new Date();
-                let month = formatTwoDigits(currentTime.getMonth());
+                let month = formatTwoDigits(currentTime.getMonth() + 1);
                 let day = formatTwoDigits(currentTime.getDate());
                 let year = currentTime.getFullYear().toString().substring(2);
                 newTaskDateDiv.innerText = `${month}/${day}/${year}`;
@@ -74,7 +80,6 @@ document.addEventListener('keydown', function(event) {
             }
             break;
         case "Escape":
-            console.log("hello");
             if (dialogue.style.display === "block") {
                 dialogue.style.display = "none";
                 textInput.innerText = "";
@@ -82,6 +87,29 @@ document.addEventListener('keydown', function(event) {
             break;
     }
 })
+
+// MEDIA QUERIES
+const mobileMediaQuery = window.matchMedia("(max-width: 620px)");
+
+
+function isOnMobile() {
+    return window.matchMedia("(max-width:620px)").matches;
+}
+
+let numSeconds = document.getElementById("numSeconds");
+numSeconds.addEventListener("mouseenter", () => {
+    if (isOnMobile() && Object.keys(tasks).length > 0) {
+        let timer = document.getElementById("timer");
+        timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
+    }
+})
+
+times.addEventListener("mouseleave", () => {
+    if (isOnMobile() && Object.keys(tasks).length > 0) {
+        let timer = document.getElementById("timer");
+        timer.style.transform = "";
+    }
+});
 
 function timer() {
     if (isTimerRunning) {
@@ -198,6 +226,7 @@ function showCompletionDialogue() {
 
 // Takes an array in the form of ["hours", "mins", "seconds"]
 function convertToSeconds(numHours, numMinutes, numSeconds) {
+    console.log("Converting " + numHours + " " + numMinutes + " " + numSeconds);
     let hours = parseInt(numHours, 10);
     let mins = parseInt(numMinutes, 10);
     let seconds = parseInt(numSeconds, 10);
@@ -226,16 +255,38 @@ function convertToStringArray(totalSeconds) {
  * the rest of the times of each task.
  * @param {object} times An object with all the tasks where {[task]: durationOfTask}
  */
-function scaleToRange(rangeSize) {
-    return Math.random() * rangeSize;
-    // const maxValue = Number.POSITIVE_INFINITY; // Represents positive infinity
-    // const scaleFactor = rangeSize / maxValue;
-    // console.log(Math.floor(x * scaleFactor));
-    // return Math.floor(x * scaleFactor);
+
+function getTaskWidth(taskDuration, maxDuration, minimumWidth, maximumWidth) {
+    console.log(taskDuration);
+    console.log(maxDuration);
+    console.log(minimumWidth);
+    console.log(maximumWidth);
+    return mapToLogarithmicRange(taskDuration, maxDuration, minimumWidth, maximumWidth);
+}
+
+function mapToLogarithmicRange(taskDuration, maxDuration, minimumWidth, maximumWidth) {
+    // Ensure positive inputs
+    value = Math.max(0, taskDuration); // duration in seconds of the ask
+    console.log(`value: ${taskDuration}`);
+    maxDuration = Math.max(0, maxDuration); // being the max width of the box
+    console.log(`asymptote: ${maxDuration}`);
+
+    // Fitting a natural log curve to our two endpoints duration:1 width: 80 & duration:86400 width: 620
+    const scaleFactor = ((maximumWidth - minimumWidth) / Math.log(maxDuration));
+    console.log(`scale factor: ${scaleFactor}`);
+
+    // Map the value to the range
+    const mappedValue = minimumWidth + (Math.log(taskDuration) * scaleFactor);
+    console.log(`mapped value: ${mappedValue}`);
+
+    // Ensure the result is within the range
+    return mappedValue;
 }
 
 function compareByDuration(a, b) {
     return a - b;
 }
+
+
 
 

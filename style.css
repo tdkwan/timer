@@ -30,11 +30,11 @@ body {
     align-items: center;
     padding-top: .12em;
     font-size: 236px;
-    line-height: 256px;
+    line-height: 226px;
 }
 
 #times {
-    display: flex;
+    display: none;
     flex-direction: column-reverse;
     justify-content: flex-start;
     align-items: flex-end;
@@ -44,11 +44,17 @@ body {
     padding-bottom: .12em;
     top: 0;
     right: 5%;
+    z-index: 99;
 }
 
 .taskContainer {
     margin-top: 15px;
     background-color: white;
+}
+.taskContainer:hover {
+    color: transparent;
+    background-color: black;
+    transition: .2s ease;
 }
 
 .taskName {
@@ -131,7 +137,7 @@ body {
 }
 .timeSummary {
     position: absolute;
-    top: 2%;
+    top: 3%;
     left: 2%;
     font-size: 35px;
     line-height: 38px;
@@ -142,14 +148,25 @@ body {
 */
 @media screen and (width <= 620px) {
     .timer {
+        width: 100%;
+        transition: .3s ease-in;
         z-index: 99;
+    
+    }
+    .timer:hover {
+        transition: .5s ease;
+        /* transform: translateY(-200px); */
+    }
+    .timeUnit {
+        width: auto;
+        padding-left: 0;
     }
     .timer > .timeUnit > .label {
         writing-mode: vertical-rl;
         text-orientation: upright;
-        font-size: 48px;
+        font-size: 46px;
         line-height: 18px;
-        letter-spacing: -30px;
+        letter-spacing: -28px;
         margin-top: -19px;
     }
 
