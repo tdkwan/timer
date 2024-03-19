@@ -110,12 +110,12 @@ textInput.addEventListener('mousedown', function(event) {
     event.stopPropagation();
 })
 
-window.addEventListener('scrollend', function(event) {
+window.addEventListener('scroll', function(event) {
     console.log(`window.innerHeight = ${window.innerHeight}`);
     console.log(`window.scrollY = ${window.scrollY}`);
     console.log(`document.body.scrollHeight = ${document.body.scrollHeight}`)
 
-    if (window.scrollY > 5) {
+    if (window.scrollY > 7) {
         if (isOnMobile() && Object.keys(tasks).length > 0) {
             let timer = document.getElementById("timer");
             timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
