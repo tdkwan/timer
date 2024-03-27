@@ -1,21 +1,18 @@
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const SECONDS_IN_A_DAY = 86400;
 const TRANSLATE_TIMER = -200;
-var seconds = 0;
-var minutes = 0;
-var hours = 0;
-var secondsDom = document.getElementById("numSeconds");
-var minutesDom = document.getElementById("numMinutes");
-var hoursDom = document.getElementById("numHours");
-// global DOM objects for completing tasks
-var dialogue = document.getElementsByClassName("dialogue")[0];
-let textInput = document.getElementById("textInput");
-isTimerRunning = false;
+let seconds = 0;
+let minutes = 0;
+let hours = 0;
+const secondsDom = document.getElementById("numSeconds");
+const minutesDom = document.getElementById("numMinutes");
+const hoursDom = document.getElementById("numHours");
+const dialogue = document.getElementsByClassName("dialogue")[0];
+const timerDiv = document.getElementById("timer");
+const textInput = document.getElementById("textInput");
+let isTimerRunning = false;
+const tasks = {}
 
-// Storing time chunks { name: timeinSeconds }
-var tasks = {}
-
-// Timer logic via Keyboard Input
 document.addEventListener('keydown', function(event) {
     switch (event.code) {
         case 'Space':
@@ -33,48 +30,46 @@ document.addEventListener('keydown', function(event) {
         case 'Enter':
             if (textInput.value.length > 0) {
                 if (Object.keys(tasks).length === 0) {
-                    let timesDiv = document.getElementById("times")
-                    timesDiv.style.display = "flex";
+                    document.getElementById("times").style.display = "flex";
                 }
-                taskName = textInput.value.toUpperCase();
-                let numHours = document.getElementById("numHours").innerText;
-                let numMinutes = document.getElementById("numMinutes").innerText;
-                let numSeconds = document.getElementById("numSeconds").innerText;
+                const taskName = textInput.value.toUpperCase();
+                const numHours = document.getElementById("numHours").innerText;
+                const numMinutes = document.getElementById("numMinutes").innerText;
+                const numSeconds = document.getElementById("numSeconds").innerText;
                 dialogue.style.display = "none";
                 tasks[taskName] = convertToSeconds(numHours, numMinutes, numSeconds)
 
                 // Container div for a new time block
-                let newTaskContainerDiv = document.createElement("div");
+                const newTaskContainerDiv = document.createElement("div");
                 newTaskContainerDiv.className = "taskContainer";
                 newTaskContainerDiv.id = taskName;
 
-                // Creating task block
-                let newTaskNameDiv = document.createElement("div");
+                // Creating task block overlay
+                const newTaskNameDiv = document.createElement("div");
                 newTaskNameDiv.className = "taskName";
                 newTaskNameDiv.innerText = taskName;
                 newTaskNameDiv.style.width = `${getTaskWidth(tasks[taskName], 86400, 80, 620)}px`;
+                
                 newTaskContainerDiv.appendChild(newTaskNameDiv);
                 
-                // Creating duratino text to underlay task block
-                let newDurationDiv = document.createElement("div");
-                let durationStringArray = convertToStringArray(tasks[taskName])
+                // Creating duration text (under task block for hover)
+                const newDurationDiv = document.createElement("div");
+                const durationStringArray = convertToStringArray(tasks[taskName])
                 newDurationDiv.className = "taskDuration";
                 newDurationDiv.innerText = `${durationStringArray[0]}:${durationStringArray[1]}:${durationStringArray[2]}`;
-                newTaskNameDiv.appendChild(newDurationDiv);
-
-                // Adding the date to underlay the task block
-                let newTaskDateDiv = document.createElement("div");
+                // Adding date to underlay
+                const newTaskDateDiv = document.createElement("div");
                 newTaskDateDiv.className = "taskDate";
-                let currentTime = new Date();
-                let month = formatTwoDigits(currentTime.getMonth() + 1);
-                let day = formatTwoDigits(currentTime.getDate());
-                let year = currentTime.getFullYear().toString().substring(2);
+                const currentTime = new Date();
+                const month = formatTwoDigits(currentTime.getMonth() + 1);
+                const day = formatTwoDigits(currentTime.getDate());
+                const year = currentTime.getFullYear().toString().substring(2);
                 newTaskDateDiv.innerText = `${month}/${day}/${year}`;
                 newDurationDiv.appendChild(newTaskDateDiv);
+                
+                newTaskNameDiv.appendChild(newDurationDiv); 
 
-                let timesDiv = document.getElementById("times");
-                timesDiv.appendChild(newTaskContainerDiv);
-
+                document.getElementById("times").appendChild(newTaskContainerDiv);
                 textInput.value = "";
                 resetTimer();
             }
@@ -90,23 +85,24 @@ document.addEventListener('keydown', function(event) {
 
 
 // Timer logic for mobile interactions
-let timerDiv = document.getElementById("timer");
-timerDiv.addEventListener('mousedown', function(event) {
-    if (isTimerRunning) {
-        isTimerRunning = !isTimerRunning;
-        showCompletionDialogue();
-    } else {
-        isTimerRunning = !isTimerRunning;
-        timer();
+timerDiv.addEventListener('mousedown', () => {
+    if (dialogue.style.display === "" || dialogue.style.display === "none") {
+        if (!isTimerRunning) {
+            isTimerRunning = !isTimerRunning;
+            timer()
+        } else {
+            isTimerRunning = !isTimerRunning;
+            showCompletionDialogue();
+        }
     }
+    
 })
 
-let dialogueDiv = document.getElementById("dialogue");
-dialogueDiv.addEventListener('mousedown', function(event) {
-    dialogueDiv.style.display = "none";
+dialogue.addEventListener('mousedown', () => {
+    dialogue.style.display = "none";
 })
 
-textInput.addEventListener('mousedown', function(event) {
+textInput.addEventListener('mousedown', () => {
     event.stopPropagation();
 })
 
@@ -115,15 +111,15 @@ window.addEventListener('scroll', function(event) {
     console.log(`window.scrollY = ${window.scrollY}`);
     console.log(`document.body.scrollHeight = ${document.body.scrollHeight}`)
 
-    if (window.scrollY > 7) {
+    if (window.scrollY > 10) {
         if (isOnMobile() && Object.keys(tasks).length > 0) {
-            let timer = document.getElementById("timer");
-            timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
+            console.log("translate");
+            timerDiv.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
         }
     } else {
         if (isOnMobile() && Object.keys(tasks).length > 0) {
-            let timer = document.getElementById("timer");
-            timer.style.transform = "";
+            console.log("reset");
+            timerDiv.style.transform = "";
         }
     }
 })
@@ -134,23 +130,6 @@ const mobileMediaQuery = window.matchMedia("(max-width: 620px)");
 function isOnMobile() {
     return window.matchMedia("(max-width:620px)").matches;
 }
-
-// Handling hover effects to move timer in mobile view
-// Not needed now that mobile is actually run on mobile i.e. hover listeners don't work on mobile
-// let numSeconds = document.getElementById("numSeconds");
-// numSeconds.addEventListener("mouseenter", () => {
-//     if (isOnMobile() && Object.keys(tasks).length > 0) {
-//         let timer = document.getElementById("timer");
-//         timer.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
-//     }
-// })
-
-// times.addEventListener("mouseleave", () => {
-//     if (isOnMobile() && Object.keys(tasks).length > 0) {
-//         let timer = document.getElementById("timer");
-//         timer.style.transform = "";
-//     }
-// });
 
 function timer() {
     if (isTimerRunning) {
@@ -192,64 +171,6 @@ function getCurrentTime() {
     `${formatTwoDigits(currentTime.getHours())}:${formatTwoDigits(currentTime.getMinutes())}:${formatTwoDigits(currentTime.getSeconds())}`;
     document.getElementById("currentTimeId").innerText = `${dateString} ${timeString}`;
     setTimeout(getCurrentTime, 1000);
-}
-
-// Drawing completion dialogue animation test
-function completeTimer() {
-    let canvas = document.getElementById("dialogue");
-    /** @type {CanvasRenderingContext2D} */
-    let ctx = canvas.getContext("2d");
-    canvas.height = document.body.clientHeight;
-    canvas.width = document.body.clientWidth;
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
-    // drawBox(canvas.width, canvas.height);
-}
-
-function drawBox(width, height) {
-    let borderWidth = 40;
-    const startX = borderWidth;
-    const startY = borderWidth;
-    const endX = width - borderWidth;
-    const endY = borderWidth;
-
-    let currentX = startX;
-    let currentY = startY;
-    const steps = 100;
-    let stepCount = 0;
-
-    function animateLine() {
-        let ctx = document.getElementById("dialogue").getContext("2d");
-        // Calculate the position of the line for the current step using easing function
-        const t = easeOutQuad(stepCount / steps);
-        const x = startX + (endX - startX) * t;
-        const y = startY + (endY - startY) * t;
-    
-        // Draw the line up to the current position
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-    
-        // Increment step count
-        stepCount++;
-    
-        // Check if animation is complete
-        if (stepCount <= steps) {
-            // Continue animating
-            requestAnimationFrame(animateLine);
-        }
-    }
-
-    // Start the animation
-    animateLine();
-}
-
-// Number of steps to complete the line drawing
-
-// Easing function to gradually slow down the animation
-function easeOutQuad(t) {
-    return t * (2 - t);
 }
 
 // Dialogue input
@@ -298,27 +219,19 @@ function convertToStringArray(totalSeconds) {
  */
 
 function getTaskWidth(taskDuration, maxDuration, minimumWidth, maximumWidth) {
-    console.log(taskDuration);
-    console.log(maxDuration);
-    console.log(minimumWidth);
-    console.log(maximumWidth);
     return mapToLogarithmicRange(taskDuration, maxDuration, minimumWidth, maximumWidth);
 }
 
 function mapToLogarithmicRange(taskDuration, maxDuration, minimumWidth, maximumWidth) {
     // Ensure positive inputs
     value = Math.max(0, taskDuration); // duration in seconds of the ask
-    console.log(`value: ${taskDuration}`);
     maxDuration = Math.max(0, maxDuration); // being the max width of the box
-    console.log(`asymptote: ${maxDuration}`);
 
     // Fitting a natural log curve to our two endpoints duration:1 width: 80 & duration:86400 width: 620
     const scaleFactor = ((maximumWidth - minimumWidth) / Math.log(maxDuration));
-    console.log(`scale factor: ${scaleFactor}`);
 
     // Map the value to the range
     const mappedValue = minimumWidth + (Math.log(taskDuration) * scaleFactor);
-    console.log(`mapped value: ${mappedValue}`);
 
     // Ensure the result is within the range
     return mappedValue;
