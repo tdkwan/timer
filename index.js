@@ -1,5 +1,7 @@
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const SECONDS_IN_A_DAY = 86400;
+const SECONDS_IN_AN_HOUR = 3600;
+const SECONDS_IN_A_MINUTE = 60;
 const TRANSLATE_TIMER = -200;
 let seconds = 0;
 let minutes = 0;
@@ -10,6 +12,9 @@ const hoursDom = document.getElementById("numHours");
 const dialogue = document.getElementsByClassName("dialogue")[0];
 const timerDiv = document.getElementById("timer");
 const textInput = document.getElementById("textInput");
+let settingTimer = false;
+let keyHoldDuration = 0;
+let setTimerInterval = 1;
 let isTimerRunning = false;
 const tasks = {}
 
@@ -23,9 +28,24 @@ document.addEventListener('keydown', function(event) {
                     showCompletionDialogue();
                 } else {
                     isTimerRunning = !isTimerRunning;
-                    timer()
+                    startTimer()
                 }
             }
+            break;
+        case 'ArrowUp':
+            if (event.repeat) {
+                keyHoldDuration++;
+                if (keyHoldDuration > 30) { // increase by the minut
+                    setTimerInterval += SECONDS_IN_A_MINUTE;
+                } else if (keyHoldDuration > 50) {
+                    setTimerInterval += SECONDS_IN_AN_HOUR;
+                }
+            }
+            setTimer();
+            // while the key is held down increase the scale at which the timer increases in time
+            // 0 - 5 seconds single seconds to by 5's
+            // after about 5 seconds - increase by the minute
+            // once we hit 60 minutes - increase by hour
             break;
         case 'Enter':
             if (textInput.value.length > 0) {
@@ -83,13 +103,23 @@ document.addEventListener('keydown', function(event) {
     }
 })
 
+document.addEventListener("keyup", function(event) {
+    switch(event.code) {
+        case "ArrowUp":
+            console.log("released");
+            setTimerInterval = 1;
+            keyHoldDuration = 0;
+            break;
+
+    }
+})
 
 // Timer logic for mobile interactions
 timerDiv.addEventListener('mousedown', () => {
     if (dialogue.style.display === "" || dialogue.style.display === "none") {
         if (!isTimerRunning) {
             isTimerRunning = !isTimerRunning;
-            timer()
+            startTimer()
         } else {
             isTimerRunning = !isTimerRunning;
             showCompletionDialogue();
@@ -102,7 +132,7 @@ dialogue.addEventListener('mousedown', () => {
     dialogue.style.display = "none";
 })
 
-textInput.addEventListener('mousedown', () => {
+textInput.addEventListener('mousedown', function(event) {
     event.stopPropagation();
 })
 
@@ -124,6 +154,13 @@ window.addEventListener('scroll', function(event) {
     }
 })
 
+addEventListener('wheel', function (event) {
+    console.log("test");
+    console.log(`delta.x ${event.deltaX}`); // swipe left
+    console.log(`delta.y ${event.deltaY}`); // swipe up ++ // swipe down --
+    console.log(`delta.z ${event.deltaZ}`);
+})
+
 // MEDIA QUERIES
 const mobileMediaQuery = window.matchMedia("(max-width: 620px)");
 
@@ -131,7 +168,7 @@ function isOnMobile() {
     return window.matchMedia("(max-width:620px)").matches;
 }
 
-function timer() {
+function startTimer() {
     if (isTimerRunning) {
         seconds++
         secondsDom.innerText = formatTwoDigits(seconds);
@@ -144,8 +181,33 @@ function timer() {
             hours++;
             minutes = 0;
         }
-        setTimeout(timer, 1000);
+        setTimeout(startTimer, 1000);
     }
+}
+
+function setTimer() {
+    if (!settingTimer && seconds === 0 && minutes === 0 && hours === 0) {
+        settingTimer = true;
+    } else if (settingTimer) {
+        // Seconds is how we set the timer and we let the number of seconds define the timer
+        seconds += setTimerInterval;
+        console.log(`Seconds before ${seconds}`);
+        if (seconds >= SECONDS_IN_AN_HOUR) {
+            hours = Math.floor(seconds / SECONDS_IN_AN_HOUR);
+            console.log(`hours ${hours}`);
+            hoursDom.innerText = formatTwoDigits(hours);
+            seconds = seconds % SECONDS_IN_AN_HOUR;
+        }
+        if (seconds >= SECONDS_IN_A_MINUTE) {
+            minutes = Math.floor(seconds / SECONDS_IN_A_MINUTE);
+            console.log(`minutes ${minutes}`);
+            minutesDom.innerText = formatTwoDigits(minutes);
+            seconds = seconds % SECONDS_IN_A_MINUTE;
+        }
+        secondsDom.innerText = formatTwoDigits(seconds);
+        console.log(seconds);
+    }
+
 }
 
 function resetTimer() {
@@ -170,7 +232,7 @@ function getCurrentTime() {
     let timeString = 
     `${formatTwoDigits(currentTime.getHours())}:${formatTwoDigits(currentTime.getMinutes())}:${formatTwoDigits(currentTime.getSeconds())}`;
     document.getElementById("currentTimeId").innerText = `${dateString} ${timeString}`;
-    setTimeout(getCurrentTime, 1000);
+    setTimeout(() => {getCurrentTime}, 1000);
 }
 
 // Dialogue input

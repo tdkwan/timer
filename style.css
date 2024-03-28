@@ -93,11 +93,12 @@ body {
 }
 
 
-.task:hover {
+.task:hover, .task:active, .task:focus {
     transition: ease .2s;
     color: white;
     background-color: black;
 }
+
 
 .timeUnit {
     display: flex;
