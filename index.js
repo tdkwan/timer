@@ -1,29 +1,83 @@
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const SECONDS_IN_A_DAY = 86400;
-const TRANSLATE_TIMER = -200;
+const SECONDS_IN_AN_HOUR = 3600;
+const SECONDS_IN_A_MINUTE = 60;
+const TRANSLATE_TIMER_VERTICAL = -200;
+const TRANSLATE_TIMER_HORIZONTAL = 145;
 let seconds = 0;
 let minutes = 0;
 let hours = 0;
-const secondsDom = document.getElementById("numSeconds");
-const minutesDom = document.getElementById("numMinutes");
-const hoursDom = document.getElementById("numHours");
+const numSeconds = document.getElementById("numSeconds");
+const numMinutes = document.getElementById("numMinutes");
+const numHours = document.getElementById("numHours");
+let activeTimerDom;
 const dialogue = document.getElementsByClassName("dialogue")[0];
 const timerDiv = document.getElementById("timer");
 const textInput = document.getElementById("textInput");
+let settingTimer = false;
+let timerToggle = -1;
+let keyHoldDuration = 0;
+let setTimerInterval = 1;
 let isTimerRunning = false;
+let timerMode = false;
 const tasks = {}
+
+function focus(dom) {
+    console.log(dom);
+    dom.style.transform = `translateX(${TRANSLATE_TIMER_HORIZONTAL}px)`;
+    return dom;
+}
+
+function unfocus(dom) {
+    dom.style.transform = "";
+}
 
 document.addEventListener('keydown', function(event) {
     switch (event.code) {
+        case 'ArrowUp':
+            if (!isTimerRunning) {
+                if (timerToggle === -1) {
+                    timerToggle = 0;
+                    timerMode = true;
+                    activeTimerDom = focus(document.getElementById('seconds'));
+                } else if (timerToggle === 0) {
+                    timerToggle = 1;
+                    unfocus(activeTimerDom);
+                    activeTimerDom = focus(document.getElementById('minutes'));
+                } else { 
+                    timerToggle = 2;
+                    unfocus(activeTimerDom);
+                    activeTimerDom = focus(document.getElementById('hours'));
+                }
+            }
+            break;
+        case 'ArrowDown':
+            if (!isTimerRunning) {
+                if (timerToggle === 2) {
+                    timerToggle = 1;
+                    unfocus(activeTimerDom);
+                    activeTimerDom = focus(document.getElementById('minutes'));
+                } else if (timerToggle === 1) {
+                    timerToggle = 0;
+                    unfocus(activeTimerDom);
+                    activeTimerDom = focus(document.getElementById('seconds'));
+                } else if (timerToggle === 0) {
+                    timerToggle = -1;
+                    timerMode = false;
+                    unfocus(activeTimerDom);
+                    activeTimerDom = undefined;
+                }
+            }
+            break;
         case 'Space':
             event.preventDefault();
-            if (dialogue.style.display === "" || dialogue.style.display === "none") { // only run if not in completion stage
+            if (!timerMode && dialogue.style.display === "" || dialogue.style.display === "none") { // only run if not in completion stage
                 if (isTimerRunning) {
                     isTimerRunning = !isTimerRunning;
                     showCompletionDialogue();
                 } else {
                     isTimerRunning = !isTimerRunning;
-                    timer()
+                    startTimer()
                 }
             }
             break;
@@ -86,10 +140,10 @@ document.addEventListener('keydown', function(event) {
 
 // Timer logic for mobile interactions
 timerDiv.addEventListener('mousedown', () => {
-    if (dialogue.style.display === "" || dialogue.style.display === "none") {
+    if (!timerMode && dialogue.style.display === "" || dialogue.style.display === "none") {
         if (!isTimerRunning) {
             isTimerRunning = !isTimerRunning;
-            timer()
+            startTimer()
         } else {
             isTimerRunning = !isTimerRunning;
             showCompletionDialogue();
@@ -102,7 +156,7 @@ dialogue.addEventListener('mousedown', () => {
     dialogue.style.display = "none";
 })
 
-textInput.addEventListener('mousedown', () => {
+textInput.addEventListener('mousedown', function(event) {
     event.stopPropagation();
 })
 
@@ -111,18 +165,124 @@ window.addEventListener('scroll', function(event) {
     console.log(`window.scrollY = ${window.scrollY}`);
     console.log(`document.body.scrollHeight = ${document.body.scrollHeight}`)
 
-    if (window.scrollY > 10) {
-        if (isOnMobile() && Object.keys(tasks).length > 0) {
-            console.log("translate");
-            timerDiv.style.transform = `translateY(${TRANSLATE_TIMER}px)`;
+    if (isOnMobile() && Object.keys(tasks).length > 0) {
+        if (window.scrollY > 10) {
+            timerDiv.style.transform = `translateY(${TRANSLATE_TIMER_VERTICAL}px)`;
+        } else {
+            timerDiv.style.transform = "";
         }
     } else {
-        if (isOnMobile() && Object.keys(tasks).length > 0) {
-            console.log("reset");
-            timerDiv.style.transform = "";
+        
+    }
+})
+
+let up = 0;
+let down = 0;
+let motionStarted = false;
+let lastDelta = 0;
+const SECONDS_BUFFER_SIZE = 4;
+const SECONDS_REDUCER = 4;
+const MINUTES_BUFFER_SIZE = 4;
+const MINUTES_REDUCER = 4;
+const HOURS_BUFFER_SIZE = 8;
+const HOURS_REDUCER = 20;
+const HOURS_INTERVAL = 1;
+let eventBuffer = [];
+
+window.addEventListener('wheel', function (event) {
+    console.log(event.deltaY) // desktop
+    let deltaY = event.deltaY;
+    eventBuffer.push(deltaY);
+    console.log(eventBuffer);
+    if (timerMode) {
+        if (!motionStarted) {
+            lastDelta = deltaY;
+            motionStarted = true;
+        }
+        if (deltaY > 0) { // scroll direction 
+            if (eventBuffer.length === SECONDS_BUFFER_SIZE && activeTimerDom.id === "seconds") {
+                if (eventBuffer.every(val => val === deltaY)) { // constant increase
+                    console.log("here");
+                    seconds += deltaY;
+                    activeTimerDom.children[0].innerText = formatTwoDigits(seconds);
+                } else { // depending on the rate of change we can determine the rate of increase
+                    let diff = Math.abs(eventBuffer[eventBuffer.length - 1] - eventBuffer[0]);
+                    seconds += Math.round(diff / SECONDS_REDUCER);
+                }
+                seconds = Math.min(seconds, 60);
+                activeTimerDom.children[0].innerText = formatTwoDigits(seconds);
+                eventBuffer = [];
+            } else if (activeTimerDom.id === "minutes" && eventBuffer.length === MINUTES_BUFFER_SIZE) {
+                if (eventBuffer.every(val => val === deltaY)) { // constant increase
+                    minutes += deltaY;
+                    activeTimerDom.children[0].innerText = formatTwoDigits(minutes);
+                } else { // depending on the rate of change we can determine the rate of increase
+                    let diff = Math.abs(eventBuffer[eventBuffer.length - 1] - eventBuffer[0]);
+                    minutes += Math.round(diff / MINUTES_REDUCER);
+                }
+                minutes = Math.min(minutes, 60);
+                activeTimerDom.children[0].innerText = formatTwoDigits(minutes);
+                eventBuffer = [];
+            } else if (activeTimerDom.id === "hours" && eventBuffer.length === HOURS_BUFFER_SIZE) {
+                if (eventBuffer.every(val => val === deltaY)) { // constant increase
+                    hours += HOURS_INTERVAL;
+                    activeTimerDom.children[0].innerText = formatTwoDigits(hours);
+                } else { // depending on the rate of change we can determine the rate of increase
+                    let diff = Math.abs(eventBuffer[eventBuffer.length - 1] - eventBuffer[0]);
+                    hours += Math.round(diff / HOURS_REDUCER);
+                }
+                hours = Math.min(hours, 24);
+                activeTimerDom.children[0].innerText = formatTwoDigits(hours);
+                eventBuffer = [];
+            }
+        } else if (deltaY < 0) { // reducing time can likely remove this if statement and opt for a smaller one
+            if (activeTimerDom.id === "seconds" && eventBuffer.length === SECONDS_BUFFER_SIZE) {
+                if (eventBuffer.every(val => val === deltaY)) { // constant decrease
+                    seconds -= Math.abs(deltaY);
+                    activeTimerDom.children[0].innerText = formatTwoDigits(seconds);
+                } else { // depending on the rate of change we can determine the rate of decrease
+                    let diff = Math.abs(Math.abs(eventBuffer[eventBuffer.length - 1]) - Math.abs(eventBuffer[0]));
+                    seconds -= Math.round(diff / 5);
+                }
+                seconds = Math.max(seconds, 0);
+                activeTimerDom.children[0].innerText = formatTwoDigits(seconds);
+                eventBuffer = [];
+            } else if (activeTimerDom.id === "minutes" && eventBuffer.length === MINUTES_BUFFER_SIZE) {
+                if (eventBuffer.every(val => val === deltaY)) { // constant decrease
+                    minutes -= Math.abs(deltaY);
+                    activeTimerDom.children[0].innerText = formatTwoDigits(minutes);
+                } else { // depending on the rate of change we can determine the rate of increase
+                    let diff = Math.abs(Math.abs(eventBuffer[eventBuffer.length - 1]) - Math.abs(eventBuffer[0]));
+                    minutes -= Math.round(diff / 5);
+                }
+                minutes = Math.max(minutes, 0);
+                activeTimerDom.children[0].innerText = formatTwoDigits(minutes);
+                eventBuffer = [];
+            } else if (activeTimerDom.id === "hours" && eventBuffer.length === HOURS_BUFFER_SIZE) {
+                if (eventBuffer.every(val => val === deltaY)) { // constant increase
+                    hours -= HOURS_INTERVAL;
+                    activeTimerDom.children[0].innerText = formatTwoDigits(hours);
+                } else { // depending on the rate of change we can determine the rate of increase
+                    let diff = Math.abs(Math.abs(eventBuffer[eventBuffer.length - 1]) - Math.abs(eventBuffer[0]));
+                    hours -= Math.round(diff / HOURS_REDUCER);
+                }
+                hours = Math.max(hours, 0);
+                activeTimerDom.children[0].innerText = formatTwoDigits(hours);
+                eventBuffer = [];
+            }
+
         }
     }
 })
+
+window.addEventListener("touchstart", (event) => {
+    console.log("something was... touched?");
+});
+window.addEventListener("touchend", (event) => {
+    console.log(event);
+})
+
+
 
 // MEDIA QUERIES
 const mobileMediaQuery = window.matchMedia("(max-width: 620px)");
@@ -131,30 +291,55 @@ function isOnMobile() {
     return window.matchMedia("(max-width:620px)").matches;
 }
 
-function timer() {
+function startTimer() {
     if (isTimerRunning) {
         seconds++
-        secondsDom.innerText = formatTwoDigits(seconds);
+        numSeconds.innerText = formatTwoDigits(seconds);
         if (seconds >= 60) {
             minutes++;
-            minutesDom.innerText = formatTwoDigits(minutes);
+            numMinutes.innerText = formatTwoDigits(minutes);
             seconds = 0;
         }
         if (minutes >= 60) {
             hours++;
             minutes = 0;
         }
-        setTimeout(timer, 1000);
+        setTimeout(startTimer, 1000);
     }
+}
+
+function setTimer() {
+    if (!settingTimer && seconds === 0 && minutes === 0 && hours === 0) {
+        settingTimer = true;
+    } else if (settingTimer) {
+        // Seconds is how we set the timer and we let the number of seconds define the timer
+        seconds += setTimerInterval;
+        console.log(`Seconds before ${seconds}`);
+        if (seconds >= SECONDS_IN_AN_HOUR) {
+            hours = Math.floor(seconds / SECONDS_IN_AN_HOUR);
+            console.log(`hours ${hours}`);
+            numHours.innerText = formatTwoDigits(hours);
+            seconds = seconds % SECONDS_IN_AN_HOUR;
+        }
+        if (seconds >= SECONDS_IN_A_MINUTE) {
+            minutes = Math.floor(seconds / SECONDS_IN_A_MINUTE);
+            console.log(`minutes ${minutes}`);
+            numMinutes.innerText = formatTwoDigits(minutes);
+            seconds = seconds % SECONDS_IN_A_MINUTE;
+        }
+        numSeconds.innerText = formatTwoDigits(seconds);
+        console.log(seconds);
+    }
+
 }
 
 function resetTimer() {
     hours = 0;
-    hoursDom.innerText = formatTwoDigits(hours);
+    numHours.innerText = formatTwoDigits(hours);
     minutes = 0;
-    minutesDom.innerText = formatTwoDigits(minutes);
+    numMinutes.innerText = formatTwoDigits(minutes);
     seconds = 0;
-    secondsDom.innerText = formatTwoDigits(seconds);
+    numSeconds.innerText = formatTwoDigits(seconds);
 }
 
 function formatTwoDigits(num) {
@@ -169,7 +354,7 @@ function getCurrentTime() {
     `${MONTHS[currentTime.getMonth()]} ${formatTwoDigits(currentTime.getDate())} ${currentTime.getFullYear()}`
     let timeString = 
     `${formatTwoDigits(currentTime.getHours())}:${formatTwoDigits(currentTime.getMinutes())}:${formatTwoDigits(currentTime.getSeconds())}`;
-    document.getElementById("currentTimeId").innerText = `${dateString} ${timeString}`;
+    document.getElementById("currentTimeId").textContent = `${dateString} ${timeString}`;
     setTimeout(getCurrentTime, 1000);
 }
 
