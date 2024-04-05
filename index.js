@@ -199,7 +199,7 @@ window.addEventListener('wheel', function (event) {
                     seconds += deltaY;
                     activeTimerDom.children[0].innerText = formatTwoDigits(seconds);
                 } else { // depending on the rate of change we can determine the rate of increase
-                    let diff = Math.abs(eventBuffer[eventBuffer.length - ] - eventBuffer[0]);
+                    let diff = Math.abs(eventBuffer[eventBuffer.length - 1] - eventBuffer[0]);
                     seconds += Math.round(diff / SECONDS_REDUCER);
                 }
                 seconds = Math.min(seconds, 60);
