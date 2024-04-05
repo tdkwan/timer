@@ -23,7 +23,6 @@ let timerMode = false;
 const tasks = {}
 
 function focus(dom) {
-    console.log(dom);
     dom.style.transform = `translateX(${TRANSLATE_TIMER_HORIZONTAL}px)`;
     return dom;
 }
@@ -161,9 +160,6 @@ textInput.addEventListener('mousedown', function(event) {
 })
 
 window.addEventListener('scroll', function(event) {
-    console.log(`window.innerHeight = ${window.innerHeight}`);
-    console.log(`window.scrollY = ${window.scrollY}`);
-    console.log(`document.body.scrollHeight = ${document.body.scrollHeight}`)
 
     if (isOnMobile() && Object.keys(tasks).length > 0) {
         if (window.scrollY > 10) {
@@ -190,10 +186,8 @@ const HOURS_INTERVAL = 1;
 let eventBuffer = [];
 
 window.addEventListener('wheel', function (event) {
-    console.log(event.deltaY) // desktop
     let deltaY = event.deltaY;
     eventBuffer.push(deltaY);
-    console.log(eventBuffer);
     if (timerMode) {
         if (!motionStarted) {
             lastDelta = deltaY;
@@ -202,11 +196,10 @@ window.addEventListener('wheel', function (event) {
         if (deltaY > 0) { // scroll direction 
             if (eventBuffer.length === SECONDS_BUFFER_SIZE && activeTimerDom.id === "seconds") {
                 if (eventBuffer.every(val => val === deltaY)) { // constant increase
-                    console.log("here");
                     seconds += deltaY;
                     activeTimerDom.children[0].innerText = formatTwoDigits(seconds);
                 } else { // depending on the rate of change we can determine the rate of increase
-                    let diff = Math.abs(eventBuffer[eventBuffer.length - 1] - eventBuffer[0]);
+                    let diff = Math.abs(eventBuffer[eventBuffer.length - ] - eventBuffer[0]);
                     seconds += Math.round(diff / SECONDS_REDUCER);
                 }
                 seconds = Math.min(seconds, 60);
@@ -314,21 +307,17 @@ function setTimer() {
     } else if (settingTimer) {
         // Seconds is how we set the timer and we let the number of seconds define the timer
         seconds += setTimerInterval;
-        console.log(`Seconds before ${seconds}`);
         if (seconds >= SECONDS_IN_AN_HOUR) {
             hours = Math.floor(seconds / SECONDS_IN_AN_HOUR);
-            console.log(`hours ${hours}`);
             numHours.innerText = formatTwoDigits(hours);
             seconds = seconds % SECONDS_IN_AN_HOUR;
         }
         if (seconds >= SECONDS_IN_A_MINUTE) {
             minutes = Math.floor(seconds / SECONDS_IN_A_MINUTE);
-            console.log(`minutes ${minutes}`);
             numMinutes.innerText = formatTwoDigits(minutes);
             seconds = seconds % SECONDS_IN_A_MINUTE;
         }
         numSeconds.innerText = formatTwoDigits(seconds);
-        console.log(seconds);
     }
 
 }
