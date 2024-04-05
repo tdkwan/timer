@@ -19,7 +19,8 @@ let timerToggle = -1;
 let keyHoldDuration = 0;
 let setTimerInterval = 1;
 let isTimerRunning = false;
-let timerMode = false;
+let isCountingDown = false;
+let isSettingTimer = false;
 const tasks = {}
 
 function focus(dom) {
@@ -37,7 +38,7 @@ document.addEventListener('keydown', function(event) {
             if (!isTimerRunning) {
                 if (timerToggle === -1) {
                     timerToggle = 0;
-                    timerMode = true;
+                    isSettingTimer = true;
                     activeTimerDom = focus(document.getElementById('seconds'));
                 } else if (timerToggle === 0) {
                     timerToggle = 1;
@@ -61,8 +62,10 @@ document.addEventListener('keydown', function(event) {
                     unfocus(activeTimerDom);
                     activeTimerDom = focus(document.getElementById('seconds'));
                 } else if (timerToggle === 0) {
+                    if (seconds === 0 && minutes === 0 && hours === 0) {
+                        isSettingTimer = false;
+                    }
                     timerToggle = -1;
-                    timerMode = false;
                     unfocus(activeTimerDom);
                     activeTimerDom = undefined;
                 }
@@ -70,18 +73,30 @@ document.addEventListener('keydown', function(event) {
             break;
         case 'Space':
             event.preventDefault();
-            if (!timerMode && dialogue.style.display === "" || dialogue.style.display === "none") { // only run if not in completion stage
-                if (isTimerRunning) {
-                    isTimerRunning = !isTimerRunning;
-                    showCompletionDialogue();
+            if (dialogue.style.display === "" || dialogue.style.display === "none") {
+                if (!isSettingTimer) {
+                    if (isTimerRunning) {
+                        isTimerRunning = !isTimerRunning;
+                        showCompletionDialogue();
+                    } else {
+                        isTimerRunning = !isTimerRunning;
+                        startTimer()
+                    }
                 } else {
-                    isTimerRunning = !isTimerRunning;
-                    startTimer()
+                    if (isCountingDown) {
+                        isCountingDown = !isCountingDown; 
+                    } else {
+                        unfocus(activeTimerDom);
+                        timerToggle = -1;
+                        console.log("start the countdown!");
+                        isCountingDown = true;
+                        startCountdown();
+                    }
                 }
             }
             break;
         case 'Enter':
-            if (textInput.value.length > 0) {
+            if (textInput.value.length > 0 && !isSettingTimer) {
                 if (Object.keys(tasks).length === 0) {
                     document.getElementById("times").style.display = "flex";
                 }
@@ -139,16 +154,27 @@ document.addEventListener('keydown', function(event) {
 
 // Timer logic for mobile interactions
 timerDiv.addEventListener('mousedown', () => {
-    if (!timerMode && dialogue.style.display === "" || dialogue.style.display === "none") {
-        if (!isTimerRunning) {
-            isTimerRunning = !isTimerRunning;
-            startTimer()
+    if (dialogue.style.display === "" || dialogue.style.display === "none") {
+        if (!isSettingTimer) {
+            if (isTimerRunning) {
+                isTimerRunning = !isTimerRunning;
+                showCompletionDialogue();
+            } else {
+                isTimerRunning = !isTimerRunning;
+                startTimer()
+            }
         } else {
-            isTimerRunning = !isTimerRunning;
-            showCompletionDialogue();
+            if (isCountingDown) {
+                isCountingDown = !isCountingDown; 
+            } else {
+                unfocus(activeTimerDom);
+                timerToggle = -1;
+                console.log("start the countdown!");
+                isCountingDown = true;
+                startCountdown();
+            }
         }
     }
-    
 })
 
 dialogue.addEventListener('mousedown', () => {
@@ -188,7 +214,8 @@ let eventBuffer = [];
 window.addEventListener('wheel', function (event) {
     let deltaY = event.deltaY;
     eventBuffer.push(deltaY);
-    if (timerMode) {
+    console.log(eventBuffer);
+    if (isSettingTimer) {
         if (!motionStarted) {
             lastDelta = deltaY;
             motionStarted = true;
@@ -263,7 +290,6 @@ window.addEventListener('wheel', function (event) {
                 activeTimerDom.children[0].innerText = formatTwoDigits(hours);
                 eventBuffer = [];
             }
-
         }
     }
 })
@@ -320,6 +346,35 @@ function setTimer() {
         numSeconds.innerText = formatTwoDigits(seconds);
     }
 
+}
+
+function startCountdown() {
+    if (isCountingDown) {
+        if (seconds === 0 && minutes == 0 && hours == 0) {
+            console.log("complete");
+            showCompletionDialogue();
+            return;
+        } else {
+            if (seconds > 0) {
+                seconds--
+            } else if (minutes > 0 && hours > 0) { // and minutes is <= 0
+                hours--;
+                minutes--;
+                seconds = 59;
+            } else if (minutes === 0 && hours > 0) {
+                hours--;
+                minutes = 59;
+                seconds = 59;
+            } else if (minutes > 0 && hours === 0) {
+                minutes--;
+                seconds = 59;
+            }
+            numMinutes.innerText = formatTwoDigits(minutes);
+            numHours.innerText = formatTwoDigits(hours);
+            numSeconds.innerText = formatTwoDigits(seconds);
+        }
+        setTimeout(startCountdown, 1000);
+    }
 }
 
 function resetTimer() {
